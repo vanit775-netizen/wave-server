@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAVE Admin Panel</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a0a;color:#e0e0e0;font-family:'Segoe UI',sans-serif;min-height:100vh}
+  .login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .login-box{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:40px;width:360px}
+  .logo{color:#1db954;font-size:24px;font-weight:800;text-align:center;margin-bottom:8px}
+  .logo-sub{color:#666;font-size:12px;text-align:center;margin-bottom:28px}
+  input{width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:12px}
+  input:focus{border-color:#1db954}
+  .btn{width:100%;background:#1db954;color:#000;border:none;padding:11px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+  .btn:hover{background:#1ed760}
+  .err{color:#e74c3c;font-size:12px;margin-top:8px;text-align:center}
+  /* Dashboard */
+  .dash{display:none}
+  .header{background:#111;border-bottom:1px solid #222;padding:14px 24px;display:flex;align-items:center;gap:16px}
+  .header .logo{margin:0;font-size:18px}
+  .stats{display:flex;gap:12px;margin-left:auto}
+  .stat{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:8px 16px;text-align:center}
+  .stat-n{font-size:20px;font-weight:700;color:#1db954}
+  .stat-l{font-size:10px;color:#666}
+  .content{padding:24px;max-width:1200px;margin:0 auto}
+  .section-title{font-size:14px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#1db954;display:inline-block;box-shadow:0 0 8px #1db954}
+  table{width:100%;border-collapse:collapse;background:#111;border-radius:12px;overflow:hidden}
+  th{background:#1a1a1a;padding:10px 14px;text-align:left;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px}
+  td{padding:12px 14px;border-bottom:1px solid #1a1a1a;font-size:13px}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#151515}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+  .online{background:rgba(30,215,96,.15);color:#1db954;border:1px solid rgba(30,215,96,.3)}
+  .offline{background:rgba(255,255,255,.05);color:#666;border:1px solid #2a2a2a}
+  .blocked{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3)}
+  .action-btn{border:none;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px}
+  .btn-block{background:rgba(231,76,60,.2);color:#e74c3c;border:1px solid rgba(231,76,60,.3)}
+  .btn-block:hover{background:#e74c3c;color:#fff}
+  .btn-unblock{background:rgba(30,215,96,.2);color:#1db954;border:1px solid rgba(30,215,96,.3)}
+  .btn-unblock:hover{background:#1db954;color:#000}
+  .btn-del{background:rgba(255,255,255,.05);color:#666;border:1px solid #333}
+  .btn-del:hover{background:#e74c3c;color:#fff;border-color:#e74c3c}
+  .search{background:#111;border:1px solid #333;border-radius:8px;padding:8px 14px;color:#fff;font-size:13px;outline:none;width:280px;margin-bottom:16px}
+  .search:focus{border-color:#1db954}
+  .refresh-btn{background:none;border:1px solid #333;color:#999;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;margin-left:auto}
+  .refresh-btn:hover{border-color:#1db954;color:#1db954}
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
+  .modal.show{display:flex}
+  .modal-box{background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:28px;width:380px}
+  .modal-title{font-size:16px;font-weight:700;margin-bottom:8px}
+  .modal-sub{font-size:12px;color:#666;margin-bottom:18px}
+  .modal-btns{display:flex;gap:10px;justify-content:flex-end}
+  .btn-cancel{background:none;border:1px solid #333;color:#999;padding:8px 18px;border-radius:8px;cursor:pointer}
+  .btn-confirm{background:#e74c3c;color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="logo">♪ WAVE</div>
+    <div class="logo-sub">Admin Panel</div>
+    <input type="password" id="admin-key" placeholder="Enter admin key..." onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="btn" onclick="adminLogin()">Login</button>
+    <div class="err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dash" id="dashboard">
+  <div class="header">
+    <div class="logo">♪ WAVE Admin</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n" id="stat-total">0</div><div class="stat-l">Total Users</div></div>
+      <div class="stat"><div class="stat-n" id="stat-online">0</div><div class="stat-l">Online Now</div></div>
+      <div class="stat"><div class="stat-n" id="stat-blocked">0</div><div class="stat-l">Blocked</div></div>
+    </div>
+    <button class="refresh-btn" onclick="loadUsers()">↻ Refresh</button>
+  </div>
+  <div class="content">
+    <div style="display:flex;align-items:center;margin-bottom:16px">
+      <input class="search" id="search" placeholder="Search by name or email..." oninput="filterUsers()">
+    </div>
+    <div class="section-title"><span class="dot"></span> All Users</div>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Last Seen</th>
+          <th>Device</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="users-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Block modal -->
+<div class="modal" id="block-modal">
+  <div class="modal-box">
+    <div class="modal-title">Block User</div>
+    <div class="modal-sub" id="block-modal-name"></div>
+    <input type="text" id="block-reason" placeholder="Reason (optional)" style="margin-bottom:0">
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="confirmBlock()">Block User</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SERVER = '' // same origin
+let ADMIN_KEY = ''
+let allUsers = []
+let pendingBlockId = ''
+let ws = null
+
+function adminLogin(){
+  const key = document.getElementById('admin-key').value.trim()
+  if(!key){ document.getElementById('login-err').textContent='Enter admin key'; return }
+  // Test the key
+  fetch(SERVER+'/api/admin/users', { headers: { 'x-admin-key': key } })
+    .then(r => r.json())
+    .then(data => {
+      if(data.error){ document.getElementById('login-err').textContent='Wrong admin key'; return }
+      ADMIN_KEY = key
+      document.getElementById('login-screen').style.display='none'
+      document.getElementById('dashboard').style.display='block'
+      loadUsers()
+      connectWS()
+      setInterval(loadUsers, 10000) // auto-refresh every 10s
+    })
+    .catch(() => document.getElementById('login-err').textContent='Cannot connect to server')
+}
+
+function connectWS(){
+  const wsUrl = (location.protocol==='https:'?'wss://':'ws://') + location.host
+  ws = new WebSocket(wsUrl)
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data)
+    if(msg.type === 'online_update') loadUsers()
+  }
+  ws.onclose = () => setTimeout(connectWS, 3000)
+}
+
+function loadUsers(){
+  fetch(SERVER+'/api/admin/users', { headers: { 'x-admin-key': ADMIN_KEY } })
+    .then(r => r.json())
+    .then(users => {
+      allUsers = users
+      document.getElementById('stat-total').textContent = users.length
+      document.getElementById('stat-online').textContent = users.filter(u=>u.online).length
+      document.getElementById('stat-blocked').textContent = users.filter(u=>u.is_blocked).length
+      renderUsers(users)
+    })
+}
+
+function filterUsers(){
+  const q = document.getElementById('search').value.toLowerCase()
+  renderUsers(allUsers.filter(u => u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)))
+}
+
+function renderUsers(users){
+  const tbody = document.getElementById('users-table')
+  if(!users.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#555;padding:30px">No users found</td></tr>'; return }
+  tbody.innerHTML = users.map(u => {
+    const statusBadge = u.is_blocked
+      ? '<span class="badge blocked">Blocked</span>'
+      : u.online
+        ? '<span class="badge online">● Online</span>'
+        : '<span class="badge offline">Offline</span>'
+    const lastSeen = u.online ? 'Now' : (u.last_seen_ago !== null ? formatTime(u.last_seen_ago) : 'Never')
+    const device = u.device_info ? u.device_info.substring(0,30) : '—'
+    const blockBtn = u.is_blocked
+      ? `<button class="action-btn btn-unblock" onclick="unblockUser('${u.id}')">Unblock</button>`
+      : `<button class="action-btn btn-block" onclick="openBlockModal('${u.id}','${u.username}')">Block</button>`
+    return `<tr>
+      <td><strong>${u.username}</strong></td>
+      <td style="color:#888">${u.email}</td>
+      <td>${statusBadge}</td>
+      <td style="color:#666">${lastSeen}</td>
+      <td style="color:#555;font-size:11px">${device}</td>
+      <td>${blockBtn}<button class="action-btn btn-del" onclick="deleteUser('${u.id}','${u.username}')">Delete</button></td>
+    </tr>`
+  }).join('')
+}
+
+function formatTime(secs){
+  if(secs < 60) return secs+'s ago'
+  if(secs < 3600) return Math.floor(secs/60)+'m ago'
+  if(secs < 86400) return Math.floor(secs/3600)+'h ago'
+  return Math.floor(secs/86400)+'d ago'
+}
+
+function openBlockModal(id, name){
+  pendingBlockId = id
+  document.getElementById('block-modal-name').textContent = 'Blocking: '+name
+  document.getElementById('block-reason').value = ''
+  document.getElementById('block-modal').classList.add('show')
+}
+
+function closeModal(){ document.getElementById('block-modal').classList.remove('show') }
+
+function confirmBlock(){
+  const reason = document.getElementById('block-reason').value.trim()
+  fetch(SERVER+'/api/admin/block', {
+    method:'POST', headers:{'Content-Type':'application/json','x-admin-key':ADMIN_KEY},
+    body: JSON.stringify({ userId: pendingBlockId, reason })
+  }).then(() => { closeModal(); loadUsers() })
+}
+
+function unblockUser(id){
+  fetch(SERVER+'/api/admin/unblock', {
+    method:'POST', headers:{'Content-Type':'application/json','x-admin-key':ADMIN_KEY},
+    body: JSON.stringify({ userId: id })
+  }).then(() => loadUsers())
+}
+
+function deleteUser(id, name){
+  if(!confirm('Delete user "'+name+'" permanently?')) return
+  fetch(SERVER+'/api/admin/delete', {
+    method:'POST', headers:{'Content-Type':'application/json','x-admin-key':ADMIN_KEY},
+    body: JSON.stringify({ userId: id })
+  }).then(() => loadUsers())
+}
+</script>
+</body>
+</html>
